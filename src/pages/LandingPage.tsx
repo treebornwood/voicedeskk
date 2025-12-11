@@ -18,7 +18,7 @@ export default function LandingPage() {
                 onClick={() => navigate('/explore')}
                 className="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium"
               >
-                Explore
+                Try Demos
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
@@ -53,7 +53,7 @@ export default function LandingPage() {
                 onClick={() => navigate('/explore')}
                 className="px-8 py-4 bg-white text-emerald-600 border-2 border-emerald-600 rounded-lg hover:bg-emerald-50 font-semibold text-lg"
               >
-                Try a Demo
+                Try Live Agents
               </button>
             </div>
           </div>
