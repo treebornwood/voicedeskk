@@ -781,7 +781,7 @@ function SettingsPage() {
               <h3 className="text-lg font-semibold text-slate-900">Voice Agent Settings</h3>
               <p className="text-sm text-slate-500 mt-1">Configure your ElevenLabs conversational AI agent</p>
             </div>
-            {!agentId && !showAgentCreator && (
+            {!showAgentCreator && (
               <button
                 onClick={() => setShowAgentCreator(true)}
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
@@ -854,7 +854,7 @@ function SettingsPage() {
               />
               <p className="text-sm text-slate-500 mt-2">
                 {agentId
-                  ? 'Your agent is configured. You can change it or create a new one.'
+                  ? 'Your agent is configured. Click "Create New Agent" above to create another agent and replace this one.'
                   : 'Get your Agent ID from the ElevenLabs dashboard or create a new agent above.'}
               </p>
             </div>
