@@ -62,7 +62,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create businesses table
 CREATE TABLE IF NOT EXISTS businesses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  clerk_user_id TEXT UNIQUE NOT NULL,
+  clerk_user_id TEXT NOT NULL,
   business_name TEXT NOT NULL,
   business_type TEXT,
   description TEXT,
