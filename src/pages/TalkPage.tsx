@@ -45,7 +45,7 @@ export default function TalkPage() {
     time: '',
   });
 
-  const agentId = import.meta.env.VITE_ELEVENLABS_AGENT_ID;
+  const agentId = business?.elevenlabs_agent_id || import.meta.env.VITE_ELEVENLABS_AGENT_ID;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,7 +57,7 @@ export default function TalkPage() {
 
   const handleStartConversation = async () => {
     if (!agentId) {
-      setErrorMessage('ElevenLabs Agent ID not configured');
+      setErrorMessage('This business has not configured their voice agent yet');
       return;
     }
 

@@ -442,6 +442,7 @@ function SettingsPage() {
   const [phone, setPhone] = useState(business?.phone || '');
   const [email, setEmail] = useState(business?.email || '');
   const [address, setAddress] = useState(business?.address || '');
+  const [agentId, setAgentId] = useState(business?.elevenlabs_agent_id || '');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -452,6 +453,7 @@ function SettingsPage() {
       setPhone(business.phone || '');
       setEmail(business.email || '');
       setAddress(business.address || '');
+      setAgentId(business.elevenlabs_agent_id || '');
     }
   }, [business]);
 
@@ -465,6 +467,7 @@ function SettingsPage() {
         phone,
         email,
         address,
+        elevenlabs_agent_id: agentId || null,
       });
       alert('Settings saved successfully');
     } catch (error) {
@@ -550,6 +553,25 @@ function SettingsPage() {
             onChange={(e) => setAddress(e.target.value)}
             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
+        </div>
+
+        <div className="pt-6 border-t border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Voice Agent Settings</h3>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              ElevenLabs Agent ID
+            </label>
+            <input
+              type="text"
+              value={agentId}
+              onChange={(e) => setAgentId(e.target.value)}
+              placeholder="agent_xxxxxxxxxxxxxxx"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+            />
+            <p className="text-sm text-slate-500 mt-2">
+              Get your Agent ID from the ElevenLabs Conversational AI dashboard
+            </p>
+          </div>
         </div>
 
         <div className="flex justify-end">
