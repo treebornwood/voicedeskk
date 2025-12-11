@@ -23,17 +23,13 @@ The webhook receives a POST request with the following JSON body:
 ```json
 {
   "name": "Business Voice Agent",
-  "voice": "Rachel",
-  "prompt": "You are a helpful voice assistant for this business.",
-  "apiKey": "sk_..."
+  "prompt": "You are a helpful voice assistant for this business."
 }
 ```
 
 ### Fields:
-- `name` (string): The name for the new agent
-- `voice` (string): ElevenLabs voice ID (Rachel, Clyde, Domi, Dave, Fin, Sarah, Antoni, Thomas)
-- `prompt` (string): Initial system prompt for the agent
-- `apiKey` (string): ElevenLabs API key
+- `name` (string, required): The name for the new agent
+- `prompt` (string, required): System prompt for the agent
 
 ## Response Format
 
@@ -59,7 +55,7 @@ Your n8n workflow should:
    - Method: POST
    - URL: `https://api.elevenlabs.io/v1/convai/agents`
    - Headers:
-     - `xi-api-key`: `{{$json.body.apiKey}}`
+     - `xi-api-key`: Your ElevenLabs API key (configured in n8n)
      - `Content-Type`: `application/json`
    - Body:
      ```json
@@ -78,7 +74,7 @@ Your n8n workflow should:
          },
          "tts": {
            "provider": "elevenlabs",
-           "voice_id": "{{$json.body.voice}}"
+           "voice_id": "Rachel"
          }
        },
        "platform_settings": {
@@ -92,6 +88,13 @@ Your n8n workflow should:
      }
      ```
 3. **Function Node**: Extract and format the response
+   ```javascript
+   return {
+     json: {
+       agentId: $input.item.json.agent_id
+     }
+   };
+   ```
 4. **Respond to Webhook Node**: Return the formatted response
 
 ## Error Handling
@@ -112,9 +115,7 @@ curl -X POST https://your-n8n-instance.com/webhook/create-agent \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Test Agent",
-    "voice": "Rachel",
-    "prompt": "You are a test agent.",
-    "apiKey": "your_elevenlabs_api_key"
+    "prompt": "You are a test agent."
   }'
 ```
 
@@ -124,3 +125,9 @@ Expected response:
   "agentId": "agent_xxxxxxxxxxxxx"
 }
 ```
+
+## Notes
+
+- Voice selection and ElevenLabs API key should be configured directly in your n8n workflow
+- This keeps credentials secure within n8n instead of passing them from the client
+- The default voice is set to "Rachel" but you can change this in your n8n workflow configuration

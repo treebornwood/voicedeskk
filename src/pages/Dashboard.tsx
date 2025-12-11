@@ -660,7 +660,6 @@ function SettingsPage() {
   const [showAgentCreator, setShowAgentCreator] = useState(false);
   const [creatingAgent, setCreatingAgent] = useState(false);
   const [newAgentName, setNewAgentName] = useState('');
-  const [newAgentVoice, setNewAgentVoice] = useState('Rachel');
   const [newAgentPrompt, setNewAgentPrompt] = useState('');
 
   useEffect(() => {
@@ -687,12 +686,6 @@ function SettingsPage() {
       return;
     }
 
-    const elevenlabsApiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
-    if (!elevenlabsApiKey) {
-      alert('ElevenLabs API key not configured');
-      return;
-    }
-
     setCreatingAgent(true);
     try {
       const response = await fetch(`${n8nUrl}/webhook/create-agent`, {
@@ -702,9 +695,7 @@ function SettingsPage() {
         },
         body: JSON.stringify({
           name: newAgentName,
-          voice: newAgentVoice,
           prompt: newAgentPrompt || `You are a helpful voice assistant for ${business?.business_name || 'this business'}.`,
-          apiKey: elevenlabsApiKey,
         }),
       });
 
@@ -806,27 +797,7 @@ function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Voice
-                </label>
-                <select
-                  value={newAgentVoice}
-                  onChange={(e) => setNewAgentVoice(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="Rachel">Rachel (Female, American)</option>
-                  <option value="Clyde">Clyde (Male, American)</option>
-                  <option value="Domi">Domi (Female, American)</option>
-                  <option value="Dave">Dave (Male, British)</option>
-                  <option value="Fin">Fin (Male, Irish)</option>
-                  <option value="Sarah">Sarah (Female, American)</option>
-                  <option value="Antoni">Antoni (Male, American)</option>
-                  <option value="Thomas">Thomas (Male, American)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Initial Prompt (Optional)
+                  System Prompt (Optional)
                 </label>
                 <textarea
                   value={newAgentPrompt}
