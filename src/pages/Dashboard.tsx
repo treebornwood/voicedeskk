@@ -657,6 +657,11 @@ function SettingsPage() {
   const [address, setAddress] = useState(business?.address || '');
   const [agentId, setAgentId] = useState(business?.elevenlabs_agent_id || '');
   const [saving, setSaving] = useState(false);
+  const [showAgentCreator, setShowAgentCreator] = useState(false);
+  const [creatingAgent, setCreatingAgent] = useState(false);
+  const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentVoice, setNewAgentVoice] = useState('Rachel');
+  const [newAgentPrompt, setNewAgentPrompt] = useState('');
 
   useEffect(() => {
     if (business) {
@@ -669,6 +674,65 @@ function SettingsPage() {
       setAgentId(business.elevenlabs_agent_id || '');
     }
   }, [business]);
+
+  const handleCreateAgent = async () => {
+    if (!newAgentName.trim()) {
+      alert('Please enter an agent name');
+      return;
+    }
+
+    const n8nUrl = import.meta.env.VITE_N8N_BASE_URL;
+    if (!n8nUrl || n8nUrl === 'https://your-n8n.com') {
+      alert('n8n webhook URL not configured. Please update VITE_N8N_BASE_URL in your .env file');
+      return;
+    }
+
+    const elevenlabsApiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+    if (!elevenlabsApiKey) {
+      alert('ElevenLabs API key not configured');
+      return;
+    }
+
+    setCreatingAgent(true);
+    try {
+      const response = await fetch(`${n8nUrl}/webhook/create-agent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newAgentName,
+          voice: newAgentVoice,
+          prompt: newAgentPrompt || `You are a helpful voice assistant for ${business?.business_name || 'this business'}.`,
+          apiKey: elevenlabsApiKey,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create agent');
+      }
+
+      const result = await response.json();
+
+      if (result.agentId) {
+        setAgentId(result.agentId);
+        await updateBusiness({
+          elevenlabs_agent_id: result.agentId,
+        });
+        setShowAgentCreator(false);
+        setNewAgentName('');
+        setNewAgentPrompt('');
+        alert(`Agent created successfully! Agent ID: ${result.agentId}`);
+      } else {
+        throw new Error('No agent ID returned');
+      }
+    } catch (error) {
+      console.error('Error creating agent:', error);
+      alert(`Failed to create agent: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setCreatingAgent(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -700,22 +764,109 @@ function SettingsPage() {
 
       <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-6">
         <div className="pb-6 border-b border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Voice Agent Settings</h3>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              ElevenLabs Agent ID
-            </label>
-            <input
-              type="text"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              placeholder="agent_xxxxxxxxxxxxxxx"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
-            />
-            <p className="text-sm text-slate-500 mt-2">
-              Get your Agent ID from the ElevenLabs Conversational AI dashboard. Each business needs its own unique agent.
-            </p>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Voice Agent Settings</h3>
+              <p className="text-sm text-slate-500 mt-1">Configure your ElevenLabs conversational AI agent</p>
+            </div>
+            {!agentId && !showAgentCreator && (
+              <button
+                onClick={() => setShowAgentCreator(true)}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
+              >
+                Create New Agent
+              </button>
+            )}
           </div>
+
+          {showAgentCreator ? (
+            <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
+              <div className="flex justify-between items-center">
+                <h4 className="font-semibold text-slate-900">Create ElevenLabs Agent</h4>
+                <button
+                  onClick={() => setShowAgentCreator(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Agent Name
+                </label>
+                <input
+                  type="text"
+                  value={newAgentName}
+                  onChange={(e) => setNewAgentName(e.target.value)}
+                  placeholder={`${business?.business_name || 'My'} Voice Agent`}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Voice
+                </label>
+                <select
+                  value={newAgentVoice}
+                  onChange={(e) => setNewAgentVoice(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="Rachel">Rachel (Female, American)</option>
+                  <option value="Clyde">Clyde (Male, American)</option>
+                  <option value="Domi">Domi (Female, American)</option>
+                  <option value="Dave">Dave (Male, British)</option>
+                  <option value="Fin">Fin (Male, Irish)</option>
+                  <option value="Sarah">Sarah (Female, American)</option>
+                  <option value="Antoni">Antoni (Male, American)</option>
+                  <option value="Thomas">Thomas (Male, American)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Initial Prompt (Optional)
+                </label>
+                <textarea
+                  value={newAgentPrompt}
+                  onChange={(e) => setNewAgentPrompt(e.target.value)}
+                  placeholder="Leave empty for default prompt"
+                  rows={4}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Default: "You are a helpful voice assistant for {business?.business_name || 'this business'}."
+                </p>
+              </div>
+
+              <button
+                onClick={handleCreateAgent}
+                disabled={creatingAgent || !newAgentName.trim()}
+                className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 font-medium"
+              >
+                {creatingAgent ? 'Creating Agent...' : 'Create Agent'}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                ElevenLabs Agent ID
+              </label>
+              <input
+                type="text"
+                value={agentId}
+                onChange={(e) => setAgentId(e.target.value)}
+                placeholder="agent_xxxxxxxxxxxxxxx"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+              />
+              <p className="text-sm text-slate-500 mt-2">
+                {agentId
+                  ? 'Your agent is configured. You can change it or create a new one.'
+                  : 'Get your Agent ID from the ElevenLabs dashboard or create a new agent above.'}
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
