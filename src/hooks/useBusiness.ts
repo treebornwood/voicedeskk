@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react';
-import { supabase, Business, BusinessContent, Booking } from '../lib/supabase';
-import { useUser } from '@clerk/clerk-react';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase, createAuthenticatedClient, Business, BusinessContent, Booking } from '../lib/supabase';
+import { useUser, useAuth } from '@clerk/clerk-react';
 
 export function useBusiness() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchBusiness();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
+  // Helper to get authenticated Supabase client
+  const getAuthClient = useCallback(async () => {
+    const token = await getToken({ template: 'supabase' });
+    if (!token) throw new Error('Failed to get authentication token');
+    return createAuthenticatedClient(token);
+  }, [getToken]);
 
-  const fetchBusiness = async () => {
+  const fetchBusiness = useCallback(async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const client = await getAuthClient();
+      const { data, error } = await client
         .from('businesses')
         .select('*')
         .eq('clerk_user_id', user.id)
@@ -33,7 +34,15 @@ export function useBusiness() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, getAuthClient]);
+
+  useEffect(() => {
+    if (user) {
+      fetchBusiness();
+    } else {
+      setLoading(false);
+    }
+  }, [user, fetchBusiness]);
 
   const createBusiness = async (businessData: Partial<Business>) => {
     if (!user) throw new Error('User not authenticated');
@@ -43,7 +52,8 @@ export function useBusiness() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '') || '';
 
-    const { data, error } = await supabase
+    const client = await getAuthClient();
+    const { data, error } = await client
       .from('businesses')
       .insert({
         clerk_user_id: user.id,
@@ -61,7 +71,8 @@ export function useBusiness() {
   const updateBusiness = async (updates: Partial<Business>) => {
     if (!business) throw new Error('No business found');
 
-    const { data, error } = await supabase
+    const client = await getAuthClient();
+    const { data, error } = await client
       .from('businesses')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', business.id)
@@ -84,34 +95,46 @@ export function useBusiness() {
 }
 
 export function useBusinessContent(businessId: string | undefined) {
+  const { getToken } = useAuth();
   const [content, setContent] = useState<BusinessContent[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const getAuthClient = useCallback(async () => {
+    const token = await getToken({ template: 'supabase' });
+    if (!token) throw new Error('Failed to get authentication token');
+    return createAuthenticatedClient(token);
+  }, [getToken]);
+
+  const fetchContent = useCallback(async () => {
+    if (!businessId) return;
+
+    try {
+      const client = await getAuthClient();
+      const { data, error } = await client
+        .from('business_content')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setContent(data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [businessId, getAuthClient]);
 
   useEffect(() => {
     if (businessId) {
       fetchContent();
     }
-  }, [businessId]);
-
-  const fetchContent = async () => {
-    if (!businessId) return;
-
-    const { data, error } = await supabase
-      .from('business_content')
-      .select('*')
-      .eq('business_id', businessId)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setContent(data);
-    }
-    setLoading(false);
-  };
+  }, [businessId, fetchContent]);
 
   const addContent = async (contentData: Partial<BusinessContent>) => {
     if (!businessId) throw new Error('No business ID');
 
-    const { data, error } = await supabase
+    const client = await getAuthClient();
+    const { data, error } = await client
       .from('business_content')
       .insert({
         business_id: businessId,
@@ -126,7 +149,8 @@ export function useBusinessContent(businessId: string | undefined) {
   };
 
   const deleteContent = async (contentId: string) => {
-    const { error } = await supabase
+    const client = await getAuthClient();
+    const { error } = await client
       .from('business_content')
       .delete()
       .eq('id', contentId);
@@ -145,29 +169,40 @@ export function useBusinessContent(businessId: string | undefined) {
 }
 
 export function useBookings(businessId: string | undefined) {
+  const { getToken } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const getAuthClient = useCallback(async () => {
+    const token = await getToken({ template: 'supabase' });
+    if (!token) throw new Error('Failed to get authentication token');
+    return createAuthenticatedClient(token);
+  }, [getToken]);
+
+  const fetchBookings = useCallback(async () => {
+    if (!businessId) return;
+
+    try {
+      const client = await getAuthClient();
+      const { data, error } = await client
+        .from('bookings')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('appointment_datetime', { ascending: true });
+
+      if (!error && data) {
+        setBookings(data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [businessId, getAuthClient]);
 
   useEffect(() => {
     if (businessId) {
       fetchBookings();
     }
-  }, [businessId]);
-
-  const fetchBookings = async () => {
-    if (!businessId) return;
-
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('business_id', businessId)
-      .order('appointment_datetime', { ascending: true });
-
-    if (!error && data) {
-      setBookings(data);
-    }
-    setLoading(false);
-  };
+  }, [businessId, fetchBookings]);
 
   return {
     bookings,
