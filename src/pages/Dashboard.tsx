@@ -708,8 +708,24 @@ function SettingsPage() {
       const result = await response.json();
       console.log('Webhook response:', result);
 
+      let newAgentId = null;
+
       if (result.agentId || result.agent_id) {
-        const newAgentId = result.agentId || result.agent_id;
+        newAgentId = result.agentId || result.agent_id;
+      } else if (Array.isArray(result) && result.length > 0 && result[0].widget) {
+        const widgetHtml = result[0].widget;
+        const match = widgetHtml.match(/agent-id="([^"]+)"/);
+        if (match && match[1]) {
+          newAgentId = match[1];
+        }
+      } else if (result.widget) {
+        const match = result.widget.match(/agent-id="([^"]+)"/);
+        if (match && match[1]) {
+          newAgentId = match[1];
+        }
+      }
+
+      if (newAgentId) {
         setAgentId(newAgentId);
         await updateBusiness({
           elevenlabs_agent_id: newAgentId,

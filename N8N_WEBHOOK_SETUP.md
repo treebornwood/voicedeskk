@@ -28,8 +28,9 @@ The webhook receives a POST request with the following JSON body:
 
 ## Response Format
 
-The webhook should return a JSON response with:
+The webhook can return the agent ID in multiple formats. The application will automatically detect and extract the agent ID from any of these:
 
+### Format 1: Simple JSON (Recommended)
 ```json
 {
   "agentId": "agent_xxxxxxxxxxxxx",
@@ -37,11 +38,28 @@ The webhook should return a JSON response with:
 }
 ```
 
-### Response Fields:
-- `agentId` or `agent_id` (string, required): The ElevenLabs agent ID
-- `message` (string, optional): Success message
+### Format 2: Snake Case
+```json
+{
+  "agent_id": "agent_xxxxxxxxxxxxx"
+}
+```
 
-**Note:** The application accepts both `agentId` (camelCase) and `agent_id` (snake_case) formats.
+### Format 3: Widget Array (Auto-detected)
+```json
+[{
+  "widget": "<elevenlabs-convai agent-id=\"agent_xxxxxxxxxxxxx\"></elevenlabs-convai><script src=\"https://unpkg.com/@elevenlabs/convai-widget-embed\" async type=\"text/javascript\"></script>"
+}]
+```
+
+### Format 4: Widget Object (Auto-detected)
+```json
+{
+  "widget": "<elevenlabs-convai agent-id=\"agent_xxxxxxxxxxxxx\"></elevenlabs-convai><script src=\"https://unpkg.com/@elevenlabs/convai-widget-embed\" async type=\"text/javascript\"></script>"
+}
+```
+
+**Note:** The application will automatically extract the agent ID from the widget HTML if needed, so you can return the ElevenLabs response directly.
 
 ## CORS Configuration
 
