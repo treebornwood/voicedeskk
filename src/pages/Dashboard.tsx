@@ -688,7 +688,7 @@ function SettingsPage() {
 
     setCreatingAgent(true);
     try {
-      const response = await fetch(`${n8nUrl}/webhook/create-agent`, {
+      const response = await fetch(n8nUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

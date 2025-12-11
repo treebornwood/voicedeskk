@@ -4,17 +4,12 @@ This guide explains how to set up the n8n webhook for creating ElevenLabs agents
 
 ## Webhook URL
 
-Configure your n8n webhook URL in `.env`:
+Configure your n8n webhook URL in `.env` with the **complete webhook path**:
 ```
-VITE_N8N_BASE_URL=https://your-n8n-instance.com
+VITE_N8N_BASE_URL=https://your-n8n-instance.com/webhook/create-agent
 ```
 
-## Webhook Endpoint
-
-The webhook should be accessible at:
-```
-POST {VITE_N8N_BASE_URL}/webhook/create-agent
-```
+**Important:** Include the full webhook URL. The application will use this URL directly.
 
 ## Request Format
 
@@ -46,11 +41,25 @@ The webhook should return a JSON response with:
 - `agentId` (string, required): The ElevenLabs agent ID
 - `message` (string, optional): Success message
 
+## CORS Configuration
+
+**CRITICAL:** Your n8n webhook MUST return CORS headers to allow browser requests.
+
+In your n8n webhook response, include these headers:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+```
+
+You can add these in the "Respond to Webhook" node under "Options" > "Response Headers".
+
 ## n8n Workflow Example
 
 Your n8n workflow should:
 
-1. **Webhook Node**: Listen for POST requests at `/webhook/create-agent`
+1. **Webhook Node**: Listen for POST requests at your webhook path
+   - Enable "Respond Immediately" or add a proper response at the end
 2. **HTTP Request Node**: Call ElevenLabs API to create the agent
    - Method: POST
    - URL: `https://api.elevenlabs.io/v1/convai/agents`
@@ -128,6 +137,22 @@ Expected response:
 
 ## Notes
 
+- **CORS is required**: Make sure your n8n webhook returns proper CORS headers (see CORS Configuration section above)
 - Voice selection and ElevenLabs API key should be configured directly in your n8n workflow
 - This keeps credentials secure within n8n instead of passing them from the client
 - The default voice is set to "Rachel" but you can change this in your n8n workflow configuration
+
+## Troubleshooting
+
+### CORS Error
+If you see "No 'Access-Control-Allow-Origin' header" error:
+1. Add CORS headers to your "Respond to Webhook" node in n8n
+2. Make sure the headers include:
+   - `Access-Control-Allow-Origin: *`
+   - `Access-Control-Allow-Methods: POST, OPTIONS`
+   - `Access-Control-Allow-Headers: Content-Type`
+
+### Wrong URL
+If the webhook isn't being called:
+1. Check that your `.env` has the complete webhook URL including the path
+2. Example: `VITE_N8N_BASE_URL=https://n8n.example.com/webhook/create-agent`
