@@ -365,6 +365,7 @@ function ContentPage() {
   const [uploading, setUploading] = useState(false);
   const [textContent, setTextContent] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const handleAddText = async () => {
     if (!textContent.trim()) return;
@@ -380,11 +381,67 @@ function ContentPage() {
       });
       setTextContent('');
       setShowTextInput(false);
+
+      if (business?.elevenlabs_agent_id) {
+        await handleSyncToElevenLabs();
+      }
     } catch (error) {
       console.error('Error adding content:', error);
       alert('Failed to add content');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSyncToElevenLabs = async () => {
+    if (!business?.elevenlabs_agent_id) {
+      alert('Please configure your ElevenLabs Agent ID in Settings first');
+      return;
+    }
+
+    if (content.length === 0) {
+      alert('Please add some content before syncing');
+      return;
+    }
+
+    const elevenlabsApiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+    if (!elevenlabsApiKey) {
+      alert('ElevenLabs API key not configured');
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/sync-to-elevenlabs`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            businessId: business.id,
+            elevenlabsApiKey,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to sync');
+      }
+
+      const result = await response.json();
+      alert(`Success! Synced ${result.itemsCount} content items to ElevenLabs`);
+    } catch (error) {
+      console.error('Error syncing to ElevenLabs:', error);
+      alert(`Failed to sync: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -410,14 +467,25 @@ function ContentPage() {
           <h2 className="text-3xl font-bold text-slate-900 mb-2">Business Content</h2>
           <p className="text-slate-600">Add information for your voice agent</p>
         </div>
-        {!business?.is_live && content.length > 0 && (
-          <button
-            onClick={handleGoLive}
-            className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold"
-          >
-            Go Live
-          </button>
-        )}
+        <div className="flex gap-3">
+          {content.length > 0 && business?.elevenlabs_agent_id && (
+            <button
+              onClick={handleSyncToElevenLabs}
+              disabled={syncing}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+            >
+              {syncing ? 'Syncing...' : 'Sync to ElevenLabs'}
+            </button>
+          )}
+          {!business?.is_live && content.length > 0 && (
+            <button
+              onClick={handleGoLive}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold"
+            >
+              Go Live
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
