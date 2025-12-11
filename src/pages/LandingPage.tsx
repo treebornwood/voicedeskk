@@ -21,7 +21,13 @@ export default function LandingPage() {
                 Explore
               </button>
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/sign-in')}
+                className="px-4 py-2 text-slate-700 hover:text-slate-900 font-medium"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => navigate('/sign-up')}
                 className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium"
               >
                 Get Started
@@ -44,7 +50,7 @@ export default function LandingPage() {
             </p>
             <div className="flex gap-4 justify-center">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/sign-up')}
                 className="px-8 py-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold text-lg"
               >
                 Create Your Agent
@@ -140,7 +146,7 @@ export default function LandingPage() {
               Join businesses that never miss a customer again
             </p>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/sign-up')}
               className="px-8 py-4 bg-white text-emerald-600 rounded-lg hover:bg-emerald-50 font-semibold text-lg"
             >
               Create Your Agent Free

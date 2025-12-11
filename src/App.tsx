@@ -1,9 +1,12 @@
-import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
+import { ClerkProvider, SignedIn, SignedOut } from '@clerk/clerk-react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import TalkPage from './pages/TalkPage';
 import ExplorePage from './pages/ExplorePage';
+import SignInPage from './pages/SignInPage';
+import SignUpPage from './pages/SignUpPage';
+import SSOCallback from './pages/SSOCallback';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -36,7 +39,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     <>
       <SignedIn>{children}</SignedIn>
       <SignedOut>
-        <RedirectToSignIn />
+        <Navigate to="/sign-in" replace />
       </SignedOut>
     </>
   );
@@ -49,6 +52,9 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/talk/:slug" element={<TalkPage />} />
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
+        <Route path="/sso-callback" element={<SSOCallback />} />
         <Route
           path="/dashboard/*"
           element={
