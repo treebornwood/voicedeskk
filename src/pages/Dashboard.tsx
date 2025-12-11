@@ -700,22 +700,27 @@ function SettingsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create agent');
+        const errorText = await response.text();
+        console.error('Webhook error response:', errorText);
+        throw new Error(`Failed to create agent: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('Webhook response:', result);
 
-      if (result.agentId) {
-        setAgentId(result.agentId);
+      if (result.agentId || result.agent_id) {
+        const newAgentId = result.agentId || result.agent_id;
+        setAgentId(newAgentId);
         await updateBusiness({
-          elevenlabs_agent_id: result.agentId,
+          elevenlabs_agent_id: newAgentId,
         });
         setShowAgentCreator(false);
         setNewAgentName('');
         setNewAgentPrompt('');
-        alert(`Agent created successfully! Agent ID: ${result.agentId}`);
+        alert(`Agent created successfully! Agent ID: ${newAgentId}`);
       } else {
-        throw new Error('No agent ID returned');
+        console.error('Response missing agentId field. Full response:', result);
+        throw new Error(`No agent ID in response. Received: ${JSON.stringify(result)}`);
       }
     } catch (error) {
       console.error('Error creating agent:', error);

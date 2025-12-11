@@ -38,8 +38,10 @@ The webhook should return a JSON response with:
 ```
 
 ### Response Fields:
-- `agentId` (string, required): The ElevenLabs agent ID
+- `agentId` or `agent_id` (string, required): The ElevenLabs agent ID
 - `message` (string, optional): Success message
+
+**Note:** The application accepts both `agentId` (camelCase) and `agent_id` (snake_case) formats.
 
 ## CORS Configuration
 
@@ -156,3 +158,19 @@ If you see "No 'Access-Control-Allow-Origin' header" error:
 If the webhook isn't being called:
 1. Check that your `.env` has the complete webhook URL including the path
 2. Example: `VITE_N8N_BASE_URL=https://n8n.example.com/webhook/create-agent`
+
+### "No agent ID returned" Error
+If you see "No agent ID in response" error:
+1. Open the browser console (F12) to see the actual response from your webhook
+2. Check that your n8n workflow is returning a JSON response
+3. Verify the response includes either `agentId` or `agent_id` field
+4. Common issues:
+   - The "Respond to Webhook" node isn't configured properly
+   - The response body is empty or not JSON format
+   - The ElevenLabs API call failed but the workflow still returned success
+   - The field name is misspelled (should be `agentId` or `agent_id`)
+
+Example of a correct "Respond to Webhook" node configuration:
+- Response Code: 200
+- Response Body: `{ "agentId": "{{ $json.agent_id }}" }`
+- Response Headers: Include CORS headers (see above)
