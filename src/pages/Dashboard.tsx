@@ -7,32 +7,163 @@ import {
   FileText,
   Calendar,
   Settings,
-  Share2,
   Plus,
   Upload,
   Trash2,
   ExternalLink,
   Copy,
   CheckCircle,
+  ChevronDown,
+  Building2,
+  X,
 } from 'lucide-react';
+
+function BusinessSelector() {
+  const { business, businesses, selectBusiness, createBusiness } = useBusiness();
+  const [isOpen, setIsOpen] = useState(false);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newType, setNewType] = useState('');
+  const [newAgentId, setNewAgentId] = useState('');
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    setCreating(true);
+    try {
+      await createBusiness({
+        business_name: newName,
+        business_type: newType || null,
+        elevenlabs_agent_id: newAgentId || null,
+      });
+      setNewName('');
+      setNewType('');
+      setNewAgentId('');
+      setShowNewForm(false);
+      setIsOpen(false);
+    } catch (err) {
+      alert('Failed to create business');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  if (!business) return null;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+      >
+        <Building2 className="w-4 h-4 text-slate-500" />
+        <span className="font-medium text-slate-700">{business.business_name}</span>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-slate-200 z-20">
+            <div className="p-2">
+              <p className="text-xs font-medium text-slate-500 px-3 py-2">Your Businesses</p>
+              {businesses.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => {
+                    selectBusiness(b.id);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                    b.id === business.id ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{b.business_name}</p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {b.is_live ? 'Live' : 'Draft'} {b.elevenlabs_agent_id ? '- Agent configured' : ''}
+                    </p>
+                  </div>
+                  {b.id === business.id && <CheckCircle className="w-4 h-4 text-emerald-600" />}
+                </button>
+              ))}
+            </div>
+            <div className="border-t border-slate-200 p-2">
+              {showNewForm ? (
+                <div className="p-3 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <p className="font-medium text-slate-900">Add Business</p>
+                    <button onClick={() => setShowNewForm(false)} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Business name"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <select
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">Select type (optional)</option>
+                    <option value="barber">Barber / Salon</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="clinic">Clinic / Doctor</option>
+                    <option value="gym">Gym / Fitness</option>
+                    <option value="spa">Spa / Wellness</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={newAgentId}
+                    onChange={(e) => setNewAgentId(e.target.value)}
+                    placeholder="ElevenLabs Agent ID (optional)"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <button
+                    onClick={handleCreate}
+                    disabled={creating || !newName.trim()}
+                    className="w-full px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {creating ? 'Creating...' : 'Create Business'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowNewForm(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add another business
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { business } = useBusiness();
 
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <button onClick={() => navigate('/')}>
                 <h1 className="text-2xl font-bold text-slate-900">VoiceDesk</h1>
               </button>
-              {business && (
-                <span className="text-sm text-slate-500 ml-4">/ {business.business_name}</span>
-              )}
+              <span className="text-slate-300">/</span>
+              <BusinessSelector />
             </div>
             <UserButton afterSignOutUrl="/" />
           </div>
@@ -106,6 +237,20 @@ function OverviewPage() {
         </h2>
         <p className="text-slate-600">Manage your voice agent and bookings</p>
       </div>
+
+      {!business?.elevenlabs_agent_id && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Configure Your Voice Agent</h3>
+          <p className="text-blue-700 mb-4">Add your ElevenLabs Agent ID to enable voice conversations</p>
+          <Link
+            to="/dashboard/settings"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Settings className="w-4 h-4" />
+            Go to Settings
+          </Link>
+        </div>
+      )}
 
       {business?.is_live ? (
         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
@@ -486,6 +631,25 @@ function SettingsPage() {
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-6">
+        <div className="pb-6 border-b border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Voice Agent Settings</h3>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              ElevenLabs Agent ID
+            </label>
+            <input
+              type="text"
+              value={agentId}
+              onChange={(e) => setAgentId(e.target.value)}
+              placeholder="agent_xxxxxxxxxxxxxxx"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+            />
+            <p className="text-sm text-slate-500 mt-2">
+              Get your Agent ID from the ElevenLabs Conversational AI dashboard. Each business needs its own unique agent.
+            </p>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Business Name</label>
           <input
@@ -555,25 +719,6 @@ function SettingsPage() {
           />
         </div>
 
-        <div className="pt-6 border-t border-slate-200">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Voice Agent Settings</h3>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              ElevenLabs Agent ID
-            </label>
-            <input
-              type="text"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              placeholder="agent_xxxxxxxxxxxxxxx"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
-            />
-            <p className="text-sm text-slate-500 mt-2">
-              Get your Agent ID from the ElevenLabs Conversational AI dashboard
-            </p>
-          </div>
-        </div>
-
         <div className="flex justify-end">
           <button
             onClick={handleSave}
@@ -589,19 +734,19 @@ function SettingsPage() {
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { user } = useUser();
-  const { business, loading, createBusiness } = useBusiness();
+  const { business, businesses, loading, createBusiness } = useBusiness();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [businessName, setBusinessName] = useState('');
   const [businessType, setBusinessType] = useState('');
+  const [agentId, setAgentId] = useState('');
   const [creatingBusiness, setCreatingBusiness] = useState(false);
 
   useEffect(() => {
-    if (!loading && !business && user) {
+    if (!loading && businesses.length === 0 && user) {
       setShowOnboarding(true);
     }
-  }, [loading, business, user]);
+  }, [loading, businesses, user]);
 
   const handleCreateBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -611,7 +756,8 @@ export default function Dashboard() {
     try {
       await createBusiness({
         business_name: businessName,
-        business_type: businessType,
+        business_type: businessType || null,
+        elevenlabs_agent_id: agentId || null,
       });
       setShowOnboarding(false);
     } catch (error) {
@@ -635,7 +781,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Welcome to VoiceDesk</h2>
-          <p className="text-slate-600 mb-6">Let's set up your business profile</p>
+          <p className="text-slate-600 mb-6">Let's set up your first business</p>
 
           <form onSubmit={handleCreateBusiness} className="space-y-4">
             <div>
@@ -661,7 +807,7 @@ export default function Dashboard() {
                 onChange={(e) => setBusinessType(e.target.value)}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="">Select type</option>
+                <option value="">Select type (optional)</option>
                 <option value="barber">Barber / Salon</option>
                 <option value="restaurant">Restaurant</option>
                 <option value="clinic">Clinic / Doctor</option>
@@ -669,6 +815,22 @@ export default function Dashboard() {
                 <option value="spa">Spa / Wellness</option>
                 <option value="other">Other</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                ElevenLabs Agent ID
+              </label>
+              <input
+                type="text"
+                value={agentId}
+                onChange={(e) => setAgentId(e.target.value)}
+                placeholder="agent_xxxxxxxxxxxxxxx (optional)"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                You can add this later in Settings
+              </p>
             </div>
 
             <button

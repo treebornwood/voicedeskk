@@ -1,22 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase, Business, BusinessContent, Booking } from '../lib/supabase';
 import { useUser } from '@clerk/clerk-react';
 
+const SELECTED_BUSINESS_KEY = 'voicedesk_selected_business';
+
 export function useBusiness() {
   const { user } = useUser();
-  const [business, setBusiness] = useState<Business | null>(null);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(() => {
+    return localStorage.getItem(SELECTED_BUSINESS_KEY);
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const business = businesses.find(b => b.id === selectedBusinessId) || businesses[0] || null;
+
   useEffect(() => {
     if (user) {
-      fetchBusiness();
+      fetchBusinesses();
     } else {
       setLoading(false);
     }
   }, [user]);
 
-  const fetchBusiness = async () => {
+  useEffect(() => {
+    if (selectedBusinessId) {
+      localStorage.setItem(SELECTED_BUSINESS_KEY, selectedBusinessId);
+    }
+  }, [selectedBusinessId]);
+
+  useEffect(() => {
+    if (businesses.length > 0 && !selectedBusinessId) {
+      setSelectedBusinessId(businesses[0].id);
+    }
+  }, [businesses, selectedBusinessId]);
+
+  const fetchBusinesses = async () => {
     if (!user) return;
 
     try {
@@ -24,24 +43,30 @@ export function useBusiness() {
         .from('businesses')
         .select('*')
         .eq('clerk_user_id', user.id)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setBusiness(data);
+      setBusinesses(data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch business');
+      setError(err instanceof Error ? err.message : 'Failed to fetch businesses');
     } finally {
       setLoading(false);
     }
   };
 
+  const selectBusiness = useCallback((businessId: string) => {
+    setSelectedBusinessId(businessId);
+  }, []);
+
   const createBusiness = async (businessData: Partial<Business>) => {
     if (!user) throw new Error('User not authenticated');
 
-    const slug = businessData.business_name
+    const baseSlug = businessData.business_name
       ?.toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '') || '';
+
+    const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
     const { data, error } = await supabase
       .from('businesses')
@@ -54,12 +79,13 @@ export function useBusiness() {
       .single();
 
     if (error) throw error;
-    setBusiness(data);
+    setBusinesses(prev => [...prev, data]);
+    setSelectedBusinessId(data.id);
     return data;
   };
 
   const updateBusiness = async (updates: Partial<Business>) => {
-    if (!business) throw new Error('No business found');
+    if (!business) throw new Error('No business selected');
 
     const { data, error } = await supabase
       .from('businesses')
@@ -69,17 +95,34 @@ export function useBusiness() {
       .single();
 
     if (error) throw error;
-    setBusiness(data);
+    setBusinesses(prev => prev.map(b => b.id === data.id ? data : b));
     return data;
+  };
+
+  const deleteBusiness = async (businessId: string) => {
+    const { error } = await supabase
+      .from('businesses')
+      .delete()
+      .eq('id', businessId);
+
+    if (error) throw error;
+    setBusinesses(prev => prev.filter(b => b.id !== businessId));
+    if (selectedBusinessId === businessId) {
+      const remaining = businesses.filter(b => b.id !== businessId);
+      setSelectedBusinessId(remaining[0]?.id || null);
+    }
   };
 
   return {
     business,
+    businesses,
     loading,
     error,
+    selectBusiness,
     createBusiness,
     updateBusiness,
-    refreshBusiness: fetchBusiness,
+    deleteBusiness,
+    refreshBusinesses: fetchBusinesses,
   };
 }
 
