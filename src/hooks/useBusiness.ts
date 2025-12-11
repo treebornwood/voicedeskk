@@ -66,7 +66,8 @@ export function useBusiness() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '') || '';
 
-    const slug = `${baseSlug}-${Date.now().toString(36)}`;
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const slug = `${baseSlug}-${Date.now().toString(36)}-${randomSuffix}`;
 
     const { data, error } = await supabase
       .from('businesses')
